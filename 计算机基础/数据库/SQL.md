@@ -77,7 +77,7 @@ CRUD
 			4. datetime:日期，包含年月日时分秒	 yyyy-MM-dd HH:mm:ss
 			5. timestamp:时间错类型	包含年月日时分秒	 yyyy-MM-dd HH:mm:ss	
 				* 如果将来不给这个字段赋值，或赋值为null，则默认使用当前的系统时间，来自动赋值
-	
+		
 			6. varchar：字符串
 				* name varchar(20):姓名最大20个字符
 				* zhangsan 8个字符  张三 2个字符
@@ -329,3 +329,156 @@ SELECT sex , AVG(math),COUNT(id) 人数 FROM student WHERE math > 70 GROUP BY se
 	SELECT * FROM student LIMIT 6,3; -- 第3页
 ```
 3. limit 是一个MySQL"方言"
+
+### 8. 子查询
+
+子查询中只能返回一个字段的数据。
+
+可以将子查询的结果作为 WHRER 语句的过滤条件：
+
+```sql
+SELECT *
+FROM mytable1
+WHERE col1 IN (SELECT col2
+               FROM mytable2);
+```
+
+下面的语句可以检索出客户的订单数量，子查询语句会对第一个查询检索出的每个客户执行一次：
+
+```SQL
+SELECT cust_name, (SELECT COUNT(*)
+                   FROM Orders
+                   WHERE Orders.cust_id = Customers.cust_id)
+                   AS orders_num
+FROM Customers
+ORDER BY cust_name;
+```
+
+### 9. 连接
+
+连接用于连接多个表，使用 JOIN 关键字，并且条件语句使用 ON 而不是 WHERE。
+
+连接可以替换子查询，并且比子查询的效率一般会更快。
+
+可以用 AS 给列名、计算字段和表名取别名，给表名取别名是为了简化 SQL 语句以及连接相同表。
+
+#### 内连接
+
+内连接又称等值连接，使用 INNER JOIN 关键字。
+
+```
+SELECT A.value, B.value
+FROM tablea AS A INNER JOIN tableb AS B
+ON A.key = B.key;
+```
+
+可以不明确使用 INNER JOIN，而使用普通查询并在 WHERE 中将两个表中要连接的列用等值方法连接起来。
+
+```
+SELECT A.value, B.value
+FROM tablea AS A, tableb AS B
+WHERE A.key = B.key;
+```
+
+#### 自连接
+
+自连接可以看成内连接的一种，只是连接的表是自身而已。
+
+一张员工表，包含员工姓名和员工所属部门，要找出与 Jim 处在同一部门的所有员工姓名。
+
+子查询版本
+
+```
+SELECT name
+FROM employee
+WHERE department = (
+      SELECT department
+      FROM employee
+      WHERE name = "Jim");
+```
+
+自连接版本
+
+```
+SELECT e1.name
+FROM employee AS e1 INNER JOIN employee AS e2
+ON e1.department = e2.department
+      AND e2.name = "Jim";
+```
+
+#### 自然连接
+
+自然连接是把同名列通过等值测试连接起来的，同名列可以有多个。
+
+内连接和自然连接的区别：内连接提供连接的列，而自然连接自动连接所有同名列。
+
+```
+SELECT A.value, B.value
+FROM tablea AS A NATURAL JOIN tableb AS B;
+```
+
+#### 外连接
+
+外连接保留了没有关联的那些行。分为左外连接，右外连接以及全外连接，左外连接就是保留左表没有关联的行。
+
+检索所有顾客的订单信息，包括还没有订单信息的顾客。
+
+```
+SELECT Customers.cust_id, Orders.order_num
+FROM Customers LEFT OUTER JOIN Orders
+ON Customers.cust_id = Orders.cust_id;
+```
+
+customers 表：
+
+| cust_id | cust_name |
+| ------- | --------- |
+| 1       | a         |
+| 2       | b         |
+| 3       | c         |
+
+orders 表：
+
+| order_id | cust_id |
+| -------- | ------- |
+| 1        | 1       |
+| 2        | 1       |
+| 3        | 3       |
+| 4        | 3       |
+
+结果：
+
+| cust_id | cust_name | order_id |
+| ------- | --------- | -------- |
+| 1       | a         | 1        |
+| 1       | a         | 2        |
+| 3       | c         | 3        |
+| 3       | c         | 4        |
+| 2       | b         | Null     |
+
+### 10. 组合查询
+
+使用 **UNION** 来组合两个查询，如果第一个查询返回 M 行，第二个查询返回 N 行，那么组合查询的结果一般为 M+N 行。
+
+每个查询必须包含相同的列、表达式和聚集函数。
+
+默认会去除相同行，如果需要保留相同行，使用 UNION ALL。
+
+只能包含一个 ORDER BY 子句，并且必须位于语句的最后。
+
+```sql
+SELECT col
+FROM mytable
+WHERE col = 1
+UNION
+SELECT col
+FROM mytable
+WHERE col =2;
+```
+
+
+
+
+
+
+
