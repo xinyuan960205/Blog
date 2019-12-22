@@ -245,8 +245,6 @@ public V get(Object key) {
 
 ## 三、总结
 
-上面简单介绍了ConcurrentHashMap的核心知识，还有很多知识点都没有提及到，作者的水平也不能将其弄懂~~有兴趣进入的同学可到下面的链接继续学习。
-
 下面我来简单总结一下ConcurrentHashMap的核心要点：
 
 - **底层结构是散列表(数组+链表)+红黑树**，这一点和HashMap是一样的。
