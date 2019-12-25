@@ -111,7 +111,7 @@ Java实现多线程是使用Thread这个类的，我们来看看**Thread类的�
 - **可以避免java中的单继承的限制**
 - 应该将并发**运行任务和运行机制解耦**，因此我们选择实现Runnable接口这种方式！
 
-### 2.1 继承Thread，重写run方法
+### 2.1 继承Thread
 
 **创建一个类，继承Thread，重写run方法**
 
@@ -145,7 +145,7 @@ public class MyThreadDemo {
 
 ![img](https://mmbiz.qpic.cn/mmbiz_png/2BGWl1qPxib0bjBejhzqrhcUsVWiaON4uVAecqQwvu8wkUNSZjcLt1mYhfP8rR7eCIMcKTDzfcxq291QMEVWcibFQ/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
 
-### 2.2 实现Runnable接口，重写run方法
+### 2.2 实现Runnable接口
 
 **实现Runnable接口，重写run方法**
 
@@ -157,17 +157,6 @@ public class MyRunnable implements Runnable {
         for (int x = 0; x < 100; x++) {
             System.out.println(x);
         }
-    }
-}
-
-//补充：也可使用线程池 将实现Runnable接口的类的实例作为参数传入executorService
-public class MyThread implements Runnable  {
-    @Override
-    public void run() { ...}
- 
-    public static void main(String[] args) {
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.execute(new MyThread());
     }
 }
 ```
@@ -190,6 +179,88 @@ public class MyRunnableDemo {
 ```
 
 结果还是跟上面是**一样**的，这里我就不贴图了~~~
+
+### 2.3 实现Callable接口
+
+Callable需要使用FutureTask类帮助执行，FutureTask类结构如下：
+
+![](https://raw.githubusercontent.com/xinyuan960205/pic_resource/master/image/FutureTask%E7%B1%BB%E7%BB%93%E6%9E%84%E5%9B%BE.png)
+
+Future接口：
+
+> 判断任务是否完成：isDone()
+>
+> 能够中断任务：cancel()
+>
+> 能够获取任务执行结果：get()
+
+实现Callable接口，重写call()方法。
+
+```java
+public class MyCallable implements Callable<String>{
+    @Override
+    public String call() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            System.out.println(Thread.currentThread().getName() + "当前时间为" + new Date().getTime());
+        }
+        return "MyCallable线程成功创建！！！";
+    }
+}
+```
+
+测试
+
+```java
+public class ThreadExtend {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+    	//创建FutureTask实例
+        FutureTask<String> futureTask = new FutureTask<String>(new MyCallable());
+        //创建Thread实例，执行futureTask
+        Thread thread = new Thread(futureTask, "myThread");
+        thread.start();
+        //获取并打印MyCallable执行结果
+        String s = futureTask.get();
+        System.out.println(s);
+    }
+}
+```
+
+运行结果：
+
+```
+myThread当前时间为1577250479280
+myThread当前时间为1577250479280
+myThread当前时间为1577250479280
+myThread当前时间为1577250479280
+myThread当前时间为1577250479280
+myThread当前时间为1577250479280
+myThread当前时间为1577250479280
+myThread当前时间为1577250479280
+myThread当前时间为1577250479280
+myThread当前时间为1577250479280
+MyCallable线程成功创建！！！
+```
+
+### 2.4 线程池创建线程
+
+线程池类线程关系图
+
+![](https://raw.githubusercontent.com/xinyuan960205/pic_resource/master/image/%E7%BA%BF%E7%A8%8B%E6%B1%A0%E7%BA%BF%E7%B1%BB%E5%85%B3%E7%B3%BB%E5%9B%BE.png)
+
+一共有四大线程池，具体的后面介绍，这里只是使用Executors这个工具类去创建对应的线程池。
+
+```java
+//补充：也可使用线程池 将实现Runnable接口的类的实例作为参数传入executorService
+public class MyThread implements Runnable  {
+    @Override
+    public void run() { ...}
+ 
+    public static void main(String[] args) {
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        executorService.execute(new MyThread());
+    }
+}
+```
 
 ### 2.3 Java实现多线程需要注意的细节
 
