@@ -1,6 +1,6 @@
 ## java基础
 
-- 面向对象特性介绍、与C++区别
+- 面向对象特性介绍、与C++区别、与js的区别
 - 
 
 
@@ -9,13 +9,13 @@
 
 - 装箱拆箱
 - java的数据类型
+- 缓存池的实现，以Integer为例
 - String
   - 存储结构，8,9改变
   - String pool
   - 基本类型和String的相互转换
   - 字符串拼接
   - subString
-
 - StringBuffer和StringBuilder
 
 ## 基本语法
