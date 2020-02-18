@@ -49,6 +49,143 @@ List集合常用的子类有三个：
 - Vector
     - 底层数据结构是数组。线程安全
 
+### List遍历时如何删除元素
+
+背景：业务中经常会涉及遍历list时对集合进行插入或者删除操作
+一、 错误方式
+先看看下面几段代码，1是foreach的方式去遍历list并删除元素，2是用迭代器的方式遍历list并删除元素，3是下标遍历
+
+1. foreach 
+
+```java
+public  void  testDel(){
+        List<Integer>  list  = Lists.newArrayList();
+        for(int i=1;i<=5;i++){
+            list.add(i);
+        }
+        for(Integer ele : list){
+            if(ele == 3)
+                list.remove(ele);
+        }
+    }
+```
+
+2. Iterator
+
+```java
+public  void  testDel(){
+     List<Integer>  list  = Lists.newArrayList();
+     for(int i=1;i<=5;i++){
+         list.add(i);
+     }
+     Iterator<Integer> iterator = list.iterator();
+     while(iterator.hasNext()){
+         Integer integer = iterator.next();
+         if(integer==3)
+             list.remove(integer);
+     }
+ }
+```
+
+
+以上两段代码的执行结果都是 java.util.ConcurrentModificationException。
+
+在使用ArrayList时，当尝试用foreach或者Iterator遍历集合时进行删除或者插入元素的操作时，会抛出这样的异常：java.util.ConcurrentModificationException
+
+关于这个异常的原因，看了很多文章，基本上解释如下：ArrayList的父类AbstarctList中有一个域modCount，每次对集合进行修改（增添、删除元素）时modCount都会+1。
+
+而foreach的实现原理就是迭代器Iterator，在这里，迭代ArrayList的Iterator中有一个变量expectedModCount，该变量会初始化和modCount相等，但当对集合进行插入，删除操作，modCount会改变，就会造成expectedModCount!=modCount，此时就会抛出java.util.ConcurrentModificationException异常，是在checkForComodification方法中，代码如下：
+
+```java
+final void checkForComodification() {
+    if (modCount != expectedModCount)
+    throw new ConcurrentModificationException();
+}
+```
+
+
+那么，以上两种方式都不用呢，用下标遍历呢？看如下代码：
+
+3 . 下标遍历
+
+```java
+public void testDel() {
+        List<Integer> list = Lists.newArrayList();
+        list.add(1);
+        list.add(2);
+        list.add(2);
+        list.add(2);
+        list.add(2);
+        for(int i=0;i<list.size();i++){
+             if(list.get(i)==2){
+                list.remove(i);
+            }
+        }
+    }
+
+//结果： list = [1,2,2]
+```
+
+
+因为下标是固定死的自增，但list的大小在随着删除元素不停的减小，并且后面的元素往前移了1位,所以后面的元素遍历不到。在i=3时，由于删了2个元素，size=3，所以循环直接结束。因此这种方式也是不符合预期的。
+
+
+二、解决方法
+但业务中经常涉及遍历时删除或插入操作。所以如何安全的操作ArrayList呢，解决方法如下！
+
+1.使用迭代器的remove方法
+在使用迭代器遍历时，可使用迭代器的remove方法，因为Iterator的remove方法中 有如下的操作：
+
+expectedModCount = modCount；
+
+所以避免了ConcurrentModificationException的异常。代码如下：
+
+```java
+public void testDel() {
+        List<Integer> list = Lists.newArrayList();
+        list.add(1);
+        list.add(2);
+        list.add(2);
+        list.add(2);
+        Iterator<Integer> iterator = list.iterator();
+        while (iterator.hasNext()) {
+            Integer integer = iterator.next();
+            if (integer == 2)
+                iterator.remove();
+        }
+    }
+
+执行后结果： list = [1]
+```
+
+
+其实在阿里巴巴Java开发手册中原话：不要在 foreach 循环里进行元素的 remove/add 操作。remove 元素请使用 Iterator方式，如果并发操作，需要对 Iterator 对象加锁。
+
+2.倒序遍历删除
+
+```java
+public void testDel() {
+        List<Integer> list = Lists.newArrayList();
+        list.add(1);
+        list.add(2);
+        list.add(2);
+        list.add(2);
+        list.add(2);
+        for(int i=list.size()-1;i>=0;i--){
+             if(list.get(i)==2){
+                list.remove(i);
+            }
+        }
+    }
+
+结果： list = [1]
+```
+
+
+可见，也达到了预期的效果。因为每次删除一个元素，list大小-1，但是倒序，循环条件为i>=0，所以list的size改变并没有对遍历造成影响，且元素的前移也不会对倒序遍历有影响。
+
+所以在对list或者hashmap遍历时候进行元素删增操作时，一定要验证下，我开始想当然的以为OK，调试才发现前面几种方式是有问题的，不是异常，就是效果没达到预期。到线上会出大问题。所以整理了下，推荐最后两种方式！
+
 ## 四、Queue
 Queue用户模拟队列这种数据结构，队列通常是指“先进先出”(FIFO，first-in-first-out)的容器。队列的头部是在队列中存放时间最长的元素，队列的尾部是保存在队列中存放时间最短的元素。新元素插入（offer）到队列的尾部，访问元素（poll）操作会返回队列头部的元素。通常，队列不允许随机访问队列中的元素。
 

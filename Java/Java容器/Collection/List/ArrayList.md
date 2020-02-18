@@ -135,7 +135,7 @@ add方法：
     }
 
 ```
-这里 ensureCapacity() 方法是对 ArrayList 集合进行扩容操作。
+这里 ensureCapacityInternal() 方法是对 ArrayList 集合进行扩容操作。
 - 步骤：
 1. 检查是否需要扩容
 2. 插入元素
@@ -257,7 +257,7 @@ private void grow(int minCapacity) {
 
 - 另外需要注意的是：
 1. java 中的length 属性是针对数组说的,比如说你声明了一个数组,想知道这个数组的长度则用到了 length 这个属性.
-2. java 中的length()方法是针对字 符串String说的,如果想看这个字符串的长度则用到 length()这个方法.
+2. java 中的length()方法是针对字符串String说的,如果想看这个字符串的长度则用到 length()这个方法.
 3. java 中的size()方法是针对泛型集合说的,如果想看这个泛型有多少个元素,就调用此方法来查看!
 
 - 移位运算符
@@ -403,7 +403,18 @@ private void writeObject(java.io.ObjectOutputStream s)
 }
 ```
 
+### 安全失败Fail-safe
+
+ 采用安全失败机制的集合容器，在遍历时不是直接在集合内容上访问的，而是先复制原有集合内容，在拷贝的集合上进行遍历。
+
+   原理：由于迭代时是对原集合的拷贝进行遍历，所以在遍历过程中对原集合所作的修改并不能被迭代器检测到，所以不会触发Concurrent Modification Exception。
+
+   缺点：基于拷贝内容的优点是避免了Concurrent Modification Exception，但同样地，迭代器并不能访问到修改后的内容，即：迭代器遍历的是开始遍历那一刻拿到的集合拷贝，在遍历期间原集合发生的修改迭代器是不知道的。
+
+​     场景：java.util.concurrent包下的容器都是安全失败，可以在多线程下并发使用，并发修改。
+
 ## 五、序列化
+
 ArrayList 基于数组实现，并且具有动态扩容特性，因此保存元素的数组不一定都会被使用，那么就没必要全部进行序列化。
 
 保存元素的数组 elementData 使用 transient 修饰，该关键字声明数组默认不会被序列化。
